@@ -1,0 +1,18 @@
+<web-app>
+  <display-name>Guice Hello</display-name>
+
+  <listener>
+    <listener-class>com.vanti.incubator.BraveBootstrapContextListener</listener-class>
+  </listener>
+
+  <servlet>
+    <servlet-name>Resteasy</servlet-name>
+    <servlet-class>org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>Resteasy</servlet-name>
+    <url-pattern>/*</url-pattern>
+  </servlet-mapping>
+
+</web-app>
