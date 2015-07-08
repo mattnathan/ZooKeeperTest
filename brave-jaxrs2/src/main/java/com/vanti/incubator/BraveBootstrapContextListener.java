@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -25,8 +26,9 @@ import javax.ws.rs.client.WebTarget;
  */
 public class BraveBootstrapContextListener extends GuiceResteasyBootstrapServletContextListener {
 
-
+  @Nullable
   private ScheduledExecutorService scheduledExecutorService;
+  @Nullable
   private Client client;
 
   @Override
