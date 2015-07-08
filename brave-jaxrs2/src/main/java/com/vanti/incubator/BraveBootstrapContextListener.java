@@ -5,6 +5,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 
 import java.util.List;
@@ -14,11 +15,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
-import javax.security.auth.login.Configuration;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 
 /**
@@ -47,7 +46,10 @@ public class BraveBootstrapContextListener extends GuiceResteasyBootstrapServlet
       @Provides
       @Singleton
       Client provideClient() {
-        return ClientBuilder.newClient();
+        return new ResteasyClientBuilder()
+            // this configuration determines how many back-end requests we can perform in parallel
+            .connectionPoolSize(20)
+            .build();
       }
 
       @Provides

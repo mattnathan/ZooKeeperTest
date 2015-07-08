@@ -15,6 +15,7 @@ import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.client.AsyncInvoker;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.InvocationCallback;
 import javax.ws.rs.client.WebTarget;
@@ -77,7 +78,7 @@ public class BraveResource {
    * Complex endpoint function that calls {@code howMany} backend echo requests plus a single delay request. All this
    * happens in parallel and the function completes asynchronously.
    *
-   * @param howMany How many echo requests should we send
+   * @param howMany       How many echo requests should we send
    * @param asyncResponse Will be resumed when a result is available.
    */
   @GET
@@ -115,12 +116,16 @@ public class BraveResource {
         });
   }
 
-  private void configureAsyncResponseTimeout(@Suspended AsyncResponse asyncResponse) {
-    if (!asyncResponse.setTimeout(20, SECONDS)) {
-      System.out.println("Couldn't change the timeout of the asyncRequest");
-    }
-  }
-
+  /**
+   * Wrapper around {@link ScheduledExecutorService#schedule(Callable, long, TimeUnit)} that returns a
+   * {@link CompletableFuture} instead.
+   *
+   * @param callable the task to execute
+   * @param delay    the time from now to delay execution
+   * @param timeUnit the time unit of the delay parameter
+   * @param <T>      the type of the callable's result
+   * @return The future response from the callable.
+   */
   private <T> CompletableFuture<T> schedule(Callable<T> callable, long delay, TimeUnit timeUnit) {
     CompletableFuture<T> future = new CompletableFuture<>();
     delayService.schedule(() -> {
@@ -133,10 +138,24 @@ public class BraveResource {
     return future;
   }
 
+  /**
+   * Wrapper around {@link AsyncInvoker#get(InvocationCallback)} that returns a {@link CompletableFuture} instead of
+   * a simple {@link Future}.
+   *
+   * @param target The request we are trying to execute.
+   * @return The future response.
+   */
   public CompletableFuture<String> asyncGet(WebTarget target) {
     return asyncGet(target.request());
   }
 
+  /**
+   * Wrapper around {@link AsyncInvoker#get(InvocationCallback)} that returns a {@link CompletableFuture} instead of
+   * a simple {@link Future}.
+   *
+   * @param target The request we are trying to execute.
+   * @return The future response.
+   */
   public CompletableFuture<String> asyncGet(Invocation.Builder target) {
     CompletableFuture<String> result = new CompletableFuture<>();
     target.async().get(new InvocationCallback<String>() {
@@ -153,8 +172,30 @@ public class BraveResource {
     return result;
   }
 
-  public <T> CompletionStage<List<? extends T>> allOf(Collection<CompletableFuture<T>> items) {
+  /**
+   * Implementation of the {@link CompletableFuture#allOf(CompletableFuture[])} that returns all the resolved items
+   * instead of {@link Void}.
+   *
+   * @param items All the futures that we should wait for.
+   * @param <T>   The type of response that all the futures resolve to.
+   * @return A new {@link CompletableFuture} that will resolve when all the given items have resolved.
+   * @see CompletableFuture#allOf(CompletableFuture[])
+   */
+  public <T> CompletableFuture<List<? extends T>> allOf(Collection<CompletableFuture<T>> items) {
     return CompletableFuture.allOf(items.toArray(new CompletableFuture[items.size()]))
                             .thenApply((o) -> items.stream().map(CompletableFuture::join).collect(toList()));
+
+  }
+
+  /**
+   * Helper function that configures the {@link AsyncResponse} so that the timeout is greater.
+   *
+   * @param asyncResponse The response to configure.
+   */
+  private void configureAsyncResponseTimeout(@Suspended AsyncResponse asyncResponse) {
+    // see https://issues.jboss.org/browse/RESTEASY-1194 for why we need to do this
+    if (!asyncResponse.setTimeout(20, SECONDS)) {
+      System.out.println("Couldn't change the timeout of the asyncRequest");
+    }
   }
 }
