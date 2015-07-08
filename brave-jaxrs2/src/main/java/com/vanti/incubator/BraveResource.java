@@ -36,12 +36,12 @@ public class BraveResource {
   private static final Joiner NEW_LINES = Joiner.on('\n');
 
   private final ScheduledExecutorService delayService;
-  private final WebTarget fooService;
+  private final WebTarget braveService;
 
   @Inject
-  public BraveResource(ScheduledExecutorService delayService, @Named("fooService") WebTarget fooService) {
+  public BraveResource(ScheduledExecutorService delayService, @Named("braveService") WebTarget braveService) {
     this.delayService = checkNotNull(delayService);
-    this.fooService = checkNotNull(fooService);
+    this.braveService = checkNotNull(braveService);
   }
 
   /**
@@ -88,14 +88,14 @@ public class BraveResource {
     configureAsyncResponseTimeout(asyncResponse);
 
     // this task takes a while to complete, kick it off first so it has just that little bit longer to do its job
-    CompletableFuture<String> longTask = asyncGet(fooService.path("/brave/delay/3"));
+    CompletableFuture<String> longTask = asyncGet(braveService.path("/delay/3"));
 
     // this is the set of all values from 0 -> howMany (exclusive)
     ContiguousSet<Integer> values = ContiguousSet.create(Range.closedOpen(0, howMany), DiscreteDomain.integers());
     List<CompletableFuture<String>> backendResponses =
         values.stream()
             // compute the requests we are about to make
-            .map((val) -> fooService.path("/brave/echo/Value-" + val))
+            .map((val) -> braveService.path("/echo/Value-" + val))
                 // kick off all the backend requests
             .map(this::asyncGet)
                 // collect the promises of responses for those requests in a collection

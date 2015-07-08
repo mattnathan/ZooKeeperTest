@@ -27,6 +27,7 @@ public class BraveBootstrapContextListener extends GuiceResteasyBootstrapServlet
 
 
   private ScheduledExecutorService scheduledExecutorService;
+  private Client client;
 
   @Override
   protected List<? extends Module> getModules(ServletContext context) {
@@ -53,16 +54,17 @@ public class BraveBootstrapContextListener extends GuiceResteasyBootstrapServlet
       }
 
       @Provides
-      @Named("fooService")
+      @Named("braveService")
       WebTarget provideFooServiceClient(Client client) {
-        return client.target("http://localhost:8080");
+        return client.target("http://localhost:8080/brave");
       }
     });
   }
 
   @Inject
-  void initScheduledExecutorService(ScheduledExecutorService scheduledExecutorService) {
+  void initClosableResources(ScheduledExecutorService scheduledExecutorService, Client client) {
     this.scheduledExecutorService = scheduledExecutorService;
+    this.client = client;
   }
 
   @Override
@@ -71,6 +73,10 @@ public class BraveBootstrapContextListener extends GuiceResteasyBootstrapServlet
     if (this.scheduledExecutorService != null) {
       this.scheduledExecutorService.shutdownNow();
       this.scheduledExecutorService = null;
+    }
+    if (this.client != null) {
+      this.client.close();
+      this.client = null;
     }
   }
 }
