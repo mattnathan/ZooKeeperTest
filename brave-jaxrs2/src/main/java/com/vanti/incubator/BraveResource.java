@@ -87,7 +87,7 @@ public class BraveResource {
     configureAsyncResponseTimeout(asyncResponse);
 
     // this task takes a while to complete, kick it off first so it has just that little bit longer to do its job
-    CompletableFuture<String> longTask = getAsync(fooService.path("/brave/delay/3"));
+    CompletableFuture<String> longTask = asyncGet(fooService.path("/brave/delay/3"));
 
     // this is the set of all values from 0 -> howMany (exclusive)
     ContiguousSet<Integer> values = ContiguousSet.create(Range.closedOpen(0, howMany), DiscreteDomain.integers());
@@ -96,7 +96,7 @@ public class BraveResource {
             // compute the requests we are about to make
             .map((val) -> fooService.path("/brave/echo/Value-" + val))
                 // kick off all the backend requests
-            .map(this::getAsync)
+            .map(this::asyncGet)
                 // collect the promises of responses for those requests in a collection
             .collect(toList());
 
@@ -133,11 +133,11 @@ public class BraveResource {
     return future;
   }
 
-  public CompletableFuture<String> getAsync(WebTarget target) {
-    return getAsync(target.request());
+  public CompletableFuture<String> asyncGet(WebTarget target) {
+    return asyncGet(target.request());
   }
 
-  public CompletableFuture<String> getAsync(Invocation.Builder target) {
+  public CompletableFuture<String> asyncGet(Invocation.Builder target) {
     CompletableFuture<String> result = new CompletableFuture<>();
     target.async().get(new InvocationCallback<String>() {
       @Override
