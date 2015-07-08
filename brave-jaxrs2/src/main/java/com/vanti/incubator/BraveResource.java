@@ -37,11 +37,14 @@ public class BraveResource {
 
   private final ScheduledExecutorService delayService;
   private final WebTarget braveService;
+  private final BraveService service;
 
   @Inject
-  public BraveResource(ScheduledExecutorService delayService, @Named("braveService") WebTarget braveService) {
+  public BraveResource(ScheduledExecutorService delayService, @Named("braveService") WebTarget braveService,
+                       BraveService service) {
     this.delayService = checkNotNull(delayService);
     this.braveService = checkNotNull(braveService);
+    this.service = checkNotNull(service);
   }
 
   /**
@@ -88,7 +91,7 @@ public class BraveResource {
     configureAsyncResponseTimeout(asyncResponse);
 
     // this task takes a while to complete, kick it off first so it has just that little bit longer to do its job
-    CompletableFuture<String> longTask = asyncGet(braveService.path("/delay/3"));
+    CompletableFuture<String> longTask = service.asyncGet(braveService.path("/delay/3"));
 
     // this is the set of all values from 0 -> howMany (exclusive)
     ContiguousSet<Integer> values = ContiguousSet.create(Range.closedOpen(0, howMany), DiscreteDomain.integers());
@@ -97,7 +100,7 @@ public class BraveResource {
             // compute the requests we are about to make
             .map((val) -> braveService.path("/echo/Value-" + val))
                 // kick off all the backend requests
-            .map(this::asyncGet)
+            .map(service::asyncGet)
                 // collect the promises of responses for those requests in a collection
             .collect(toList());
 
@@ -136,40 +139,6 @@ public class BraveResource {
       }
     }, delay, timeUnit);
     return future;
-  }
-
-  /**
-   * Wrapper around {@link AsyncInvoker#get(InvocationCallback)} that returns a {@link CompletableFuture} instead of
-   * a simple {@link Future}.
-   *
-   * @param target The request we are trying to execute.
-   * @return The future response.
-   */
-  public CompletableFuture<String> asyncGet(WebTarget target) {
-    return asyncGet(target.request());
-  }
-
-  /**
-   * Wrapper around {@link AsyncInvoker#get(InvocationCallback)} that returns a {@link CompletableFuture} instead of
-   * a simple {@link Future}.
-   *
-   * @param target The request we are trying to execute.
-   * @return The future response.
-   */
-  public CompletableFuture<String> asyncGet(Invocation.Builder target) {
-    CompletableFuture<String> result = new CompletableFuture<>();
-    target.async().get(new InvocationCallback<String>() {
-      @Override
-      public void completed(String s) {
-        result.complete(s);
-      }
-
-      @Override
-      public void failed(Throwable throwable) {
-        result.completeExceptionally(throwable);
-      }
-    });
-    return result;
   }
 
   /**

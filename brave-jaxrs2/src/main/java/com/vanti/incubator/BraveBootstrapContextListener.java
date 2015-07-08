@@ -67,7 +67,7 @@ public class BraveBootstrapContextListener extends GuiceResteasyBootstrapServlet
       @Provides
       @Named("braveService")
       WebTarget provideFooServiceClient(Client client) {
-        return client.target("http://localhost:8080/brave");
+        return client.target("http://{hostAndPort}/brave");
       }
     }, new BraveModule(), new BraveJaxrsModule());
   }
