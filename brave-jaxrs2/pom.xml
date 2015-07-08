@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+  <modelVersion>${guice.version}.0</modelVersion>
 
   <groupId>com.vanti.incubator</groupId>
   <artifactId>brave-jaxrs2</artifactId>
@@ -11,6 +11,7 @@
 
   <properties>
     <resteasy.version>3.0.11.Final</resteasy.version>
+    <guice.version>4.0</guice.version>
   </properties>
 
   <dependencies>
@@ -37,7 +38,12 @@
     <dependency>
       <groupId>com.google.inject</groupId>
       <artifactId>guice</artifactId>
-      <version>4.0</version>
+      <version>${guice.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.inject.extensions</groupId>
+      <artifactId>guice-multibindings</artifactId>
+      <version>${guice.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>

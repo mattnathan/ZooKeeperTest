@@ -5,6 +5,11 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 
+import com.github.kristofa.brave.BraveExecutorService;
+import com.github.kristofa.brave.ServerSpanThreadBinder;
+import com.github.kristofa.brave.jaxrs2.BraveClientRequestFilter;
+import com.github.kristofa.brave.jaxrs2.BraveClientResponseFilter;
+
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.plugins.guice.GuiceResteasyBootstrapServletContextListener;
 
@@ -42,16 +47,20 @@ public class BraveBootstrapContextListener extends GuiceResteasyBootstrapServlet
 
       @Provides
       @Singleton
-      ScheduledExecutorService provideScheduledExecutorService() {
-        return Executors.newSingleThreadScheduledExecutor();
+      ScheduledExecutorService provideScheduledExecutorService(ServerSpanThreadBinder serverSpanThreadBinder) {
+        return new BraveScheduledExecutorService(Executors.newSingleThreadScheduledExecutor(), serverSpanThreadBinder);
       }
 
       @Provides
       @Singleton
-      Client provideClient() {
+      Client provideClient(BraveClientRequestFilter requestFilter, BraveClientResponseFilter responseFilter,
+                           ServerSpanThreadBinder serverSpanThreadBinder) {
         return new ResteasyClientBuilder()
             // this configuration determines how many back-end requests we can perform in parallel
             .connectionPoolSize(20)
+            .register(requestFilter)
+            .register(responseFilter)
+            .asyncExecutor(new BraveExecutorService(Executors.newFixedThreadPool(10), serverSpanThreadBinder))
             .build();
       }
 
@@ -60,7 +69,7 @@ public class BraveBootstrapContextListener extends GuiceResteasyBootstrapServlet
       WebTarget provideFooServiceClient(Client client) {
         return client.target("http://localhost:8080/brave");
       }
-    });
+    }, new BraveModule(), new BraveJaxrsModule());
   }
 
   @Inject
